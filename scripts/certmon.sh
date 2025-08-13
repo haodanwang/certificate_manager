@@ -64,7 +64,7 @@ free_port_if_needed() {
     pids="$(pids_on_port "$port")"
     [[ -z "$pids" ]] && break
     sleep 0.2
-  end
+  done
   pids="$(pids_on_port "$port")"
   if [[ -n "$pids" ]]; then
     echo "[certmon] force killing PIDs: $pids" | tee -a "$ERROR_LOG"
