@@ -42,13 +42,18 @@
 
 		<label for="valid_months">有效月数</label>
 		<select id="valid_months" name="valid_months" required>
-			<option value="12">12 个月</option>
-			<option value="14">14 个月</option>
-			<option value="24">24 个月</option>
-			<option value="36">36 个月</option>
-			<option value="1">1 个月</option>
-			<option value="3">3 个月</option>
-			<option value="6">6 个月</option>
+			<option value="permanent">永久</option>
+			<script>
+				(function(){
+					var sel = document.currentScript.parentElement;
+					for (var m = 2; m <= 36; m+=2) {
+						var opt = document.createElement('option');
+						opt.value = String(m);
+						opt.textContent = m + ' 个月';
+						sel.appendChild(opt);
+					}
+				})();
+			</script>
 		</select>
 		<div class="helper">将根据“获取日期 + 有效月数”自动计算到期日期</div>
 
@@ -59,7 +64,7 @@
 		<button type="submit">保存</button>
 	</form>
 
-	<h1 style="margin-top:24px">证书列表</h1>
+		<h1 style="margin-top:24px">证书列表</h1>
 	<table class="table">
 		<thead>
 			<tr>
@@ -69,7 +74,9 @@
 				<th>获取日期</th>
 				<th>有效(月)</th>
 				<th>到期日期</th>
+				<th>剩余</th>
 				<th>上次提醒</th>
+				<th>操作</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -78,10 +85,16 @@
 				<td>{{ r.id }}</td>
 				<td>{{ r.name }}</td>
 				<td>{{ r.email }}</td>
-				<td>{{ r.acquired_on.strftime('%Y-%m-%d') }}</td>
-				<td>{{ r.valid_months }}</td>
-				<td>{{ r.expires_on.strftime('%Y-%m-%d') }}</td>
-				<td>{{ r.last_reminded_on.strftime('%Y-%m-%d') if r.last_reminded_on else '-' }}</td>
+				<td>{{ r.acquired_on }}</td>
+				<td>{{ r.valid_months if r.valid_months >= 0 else '永久' }}</td>
+				<td>{{ r.expires_label }}</td>
+				<td>{{ r.days_left_label }}</td>
+				<td>{{ r.last_reminded_on }}</td>
+				<td>
+					<form method="post" action="{{ url_for('delete', cid=r.id) }}" onsubmit="return confirm('确认删除该证书？');">
+						<button type="submit" style="background:#ef4444">删除</button>
+					</form>
+				</td>
 			</tr>
 			{% endfor %}
 		</tbody>
@@ -106,7 +119,8 @@
 		function updatePreview(){
 			const acq = document.getElementById('acquired_on').value;
 			const months = parseInt(document.getElementById('valid_months').value || '0', 10);
-			const out = addMonths(acq, months);
+			const isPermanent = document.getElementById('valid_months').value === 'permanent';
+			const out = isPermanent ? '永不过期' : addMonths(acq, months);
 			document.getElementById('expires_preview').textContent = out || '-';
 		}
 		document.getElementById('acquired_on').addEventListener('change', updatePreview);
