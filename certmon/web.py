@@ -12,10 +12,16 @@ from .db import Database
 
 
 def create_app(config_path: str = "config.json") -> Flask:
-	config = try_load_config(config_path)
-	db_path = (config.app.database_path if config else "data/certmon.db")
-	# 将相对路径解析为相对于项目根目录（包上级目录）的绝对路径
+	# 项目根目录（包上级目录）
 	base_dir = Path(__file__).resolve().parent.parent
+	# 配置文件路径：相对路径一律按项目根目录解析，避免不同工作目录导致读取不同配置
+	conf_path = Path(config_path)
+	if not conf_path.is_absolute():
+		conf_path = base_dir / conf_path
+	config = try_load_config(conf_path.as_posix())
+
+	db_path = (config.app.database_path if config else "data/certmon.db")
+	# 数据库路径：相对路径按项目根目录解析，确保稳定
 	resolved = Path(db_path)
 	if not resolved.is_absolute():
 		resolved = base_dir / resolved
