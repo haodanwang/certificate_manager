@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>SMTP 设置</title>
+	<link rel="preconnect" href="/"/>
+	<style>
+		body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin:0; background:linear-gradient(180deg,#f8fafc,#eef2ff); color:#0f172a}
+		.container{max-width:760px; margin:0 auto; padding:24px 20px}
+		.card{background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 10px 30px rgba(2,8,20,.06)}
+		.card-body{padding:18px}
+		h1{font-size:18px; margin:0 0 12px}
+		label{display:block; margin:8px 0 6px; font-weight:600}
+		input{width:100%; background:#fff; color:#0f172a; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px}
+		.actions{margin-top:12px}
+		.btn{padding:10px 16px; background:linear-gradient(180deg,#6366f1,#4f46e5); color:#fff; border:0; border-radius:10px; cursor:pointer}
+		.flash{padding:10px 12px; border-radius:10px; margin:10px 0; border:1px solid #e5e7eb}
+		.flash.error{background:#fee2e2; color:#7f1d1d}
+		.flash.success{background:#dcfce7; color:#166534}
+		.nav{margin-bottom:12px}
+		.nav a{color:#4f46e5; text-decoration:none}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="nav"><a href="/">← 返回</a></div>
+		<div class="card">
+			<div class="card-body">
+				<h1>SMTP 设置</h1>
+				{% with messages = get_flashed_messages(with_categories=true) %}
+				{% if messages %}
+					{% for category, message in messages %}
+					<div class="flash {{ category }}">{{ message }}</div>
+					{% endfor %}
+				{% endif %}
+				{% endwith %}
+				<form method="post" action="{{ url_for('save_settings') }}">
+					<label>SMTP Host</label>
+					<input name="host" type="text" value="{{ (settings.host if settings else '') }}" placeholder="smtp.qq.com" required>
+					<label>Port</label>
+					<input name="port" type="number" value="{{ (settings.port if settings and settings.port is not none else 587) }}" min="1" max="65535">
+					<label>Username（发信邮箱）</label>
+					<input name="username" type="email" value="{{ (settings.username if settings else '') }}" placeholder="you@qq.com">
+					<label>Password / 授权码</label>
+					<input name="password" type="password" value="{{ (settings.password if settings else '') }}" placeholder="应用专用密码或授权码">
+					<label>From Email</label>
+					<input name="from_email" type="email" value="{{ (settings.from_email if settings else '') }}" placeholder="you@qq.com">
+					<label><input name="use_tls" type="checkbox" {% if not settings or (settings and settings.use_tls) %}checked{% endif %}> 使用 TLS（587）</label>
+					<div class="actions">
+						<button class="btn" type="submit">保存</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
+
+

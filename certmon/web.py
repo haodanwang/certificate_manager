@@ -92,6 +92,29 @@ def create_app(config_path: str = "config.json") -> Flask:
 		flash("已新增证书", "success")
 		return redirect(url_for("index"))
 
+	@app.get("/settings")
+	def settings_page():
+		settings = Database(db_path).get_smtp_settings()
+		return render_template("settings.html", settings=settings)
+
+	@app.post("/settings")
+	def save_settings():
+		host = request.form.get("host") or None
+		port = request.form.get("port")
+		username = request.form.get("username") or None
+		password = request.form.get("password") or None
+		use_tls = request.form.get("use_tls")
+		from_email = request.form.get("from_email") or None
+		try:
+			port_val = int(port) if port else None
+			use_tls_val = True if use_tls == "on" else False
+		except Exception:
+			flash("参数不合法", "error")
+			return redirect(url_for("settings_page"))
+		Database(db_path).upsert_smtp_settings(host, port_val, username, password, use_tls_val, from_email)
+		flash("SMTP 设置已保存", "success")
+		return redirect(url_for("settings_page"))
+
 	@app.post("/delete/<int:cid>")
 	def delete(cert_id: int = None, cid: int = None):
 		# Flask 2.x 传参兼容处理

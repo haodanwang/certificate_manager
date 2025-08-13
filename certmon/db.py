@@ -21,6 +21,16 @@ class Certificate:
 	updated_at: datetime
 
 
+@dataclass
+class SMTPSettings:
+	host: Optional[str]
+	port: Optional[int]
+	username: Optional[str]
+	password: Optional[str]
+	use_tls: Optional[bool]
+	from_email: Optional[str]
+
+
 class Database:
 	def __init__(self, database_path: str) -> None:
 		self._path = Path(database_path)
@@ -53,6 +63,20 @@ class Database:
 				"""
 				CREATE INDEX IF NOT EXISTS idx_certificates_expires_on
 				ON certificates (expires_on);
+				"""
+			)
+			# 应用设置（单行，id 固定为 1）
+			conn.execute(
+				"""
+				CREATE TABLE IF NOT EXISTS app_settings (
+					id INTEGER PRIMARY KEY CHECK (id = 1),
+					host TEXT,
+					port INTEGER,
+					username TEXT,
+					password TEXT,
+					use_tls INTEGER,
+					from_email TEXT
+				);
 				"""
 			)
 
@@ -242,4 +266,52 @@ class Database:
 				)
 				result.append(cert)
 			return result
+
+	def get_smtp_settings(self) -> Optional[SMTPSettings]:
+		with self.connect() as conn:
+			row = conn.execute(
+				"SELECT host, port, username, password, use_tls, from_email FROM app_settings WHERE id = 1"
+			).fetchone()
+			if not row:
+				return None
+			return SMTPSettings(
+				host=str(row["host"]) if row["host"] is not None else None,
+				port=int(row["port"]) if row["port"] is not None else None,
+				username=str(row["username"]) if row["username"] is not None else None,
+				password=str(row["password"]) if row["password"] is not None else None,
+				use_tls=bool(row["use_tls"]) if row["use_tls"] is not None else None,
+				from_email=str(row["from_email"]) if row["from_email"] is not None else None,
+			)
+
+	def upsert_smtp_settings(
+		self,
+		host: Optional[str],
+		port: Optional[int],
+		username: Optional[str],
+		password: Optional[str],
+		use_tls: Optional[bool],
+		from_email: Optional[str],
+	) -> None:
+		with self.connect() as conn:
+			conn.execute(
+				"""
+				INSERT INTO app_settings (id, host, port, username, password, use_tls, from_email)
+				VALUES (1, ?, ?, ?, ?, ?, ?)
+				ON CONFLICT(id) DO UPDATE SET
+					host = excluded.host,
+					port = excluded.port,
+					username = excluded.username,
+					password = excluded.password,
+					use_tls = excluded.use_tls,
+					from_email = excluded.from_email
+				""",
+				(
+					host,
+					(port if port is not None else None),
+					username,
+					password,
+					(1 if use_tls else 0) if use_tls is not None else None,
+					from_email,
+				),
+			)
 
