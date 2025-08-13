@@ -9,7 +9,7 @@
 
 ### 运行环境
 - Python 3.11+
--需要在编译的时候带OpenSSL编译
+-需要在编译时候带OpenSSL编译
 - Linux 服务器（推荐使用 cron 定时任务）
  - 可选 Web 管理界面（Flask）
 
