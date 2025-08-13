@@ -11,6 +11,7 @@ GUNICORN_APP="${GUNICORN_APP:-certmon.web:create_app()}"
 BIND="${BIND:-0.0.0.0:8000}"
 WORKERS="${WORKERS:-2}"
 TIMEOUT="${TIMEOUT:-60}"
+PORT_KILL="${PORT_KILL:-1}"
 
 LOG_DIR="$APP_ROOT/var/log"
 RUN_DIR="$APP_ROOT/var/run"
@@ -20,6 +21,58 @@ ERROR_LOG="$LOG_DIR/error.log"
 
 ensure_dirs() {
   mkdir -p "$LOG_DIR" "$RUN_DIR"
+}
+
+extract_port() {
+  local b="$BIND"
+  echo "${b##*:}"
+}
+
+pids_on_port() {
+  local port="$1"
+  local pids=""
+  if command -v ss >/dev/null 2>&1; then
+    pids="$(ss -tlnp 2>/dev/null | awk -v p=":$port" '$4 ~ p {print $0}' | grep -o 'pid=[0-9]\+' | awk -F= '{print $2}' | sort -u || true)"
+  fi
+  if [[ -z "$pids" ]] && command -v fuser >/dev/null 2>&1; then
+    pids="$(fuser -n tcp "$port" 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+$' | sort -u || true)"
+  fi
+  if [[ -z "$pids" ]] && command -v lsof >/dev/null 2>&1; then
+    pids="$(lsof -i TCP:"$port" -sTCP:LISTEN -t 2>/dev/null | sort -u || true)"
+  fi
+  echo "$pids"
+}
+
+free_port_if_needed() {
+  local port
+  port="$(extract_port)"
+  [[ -z "$port" ]] && return 0
+  local pids
+  pids="$(pids_on_port "$port")"
+  [[ -z "$pids" ]] && return 0
+  if [[ "$PORT_KILL" != "1" ]]; then
+    echo "[certmon] port $port in use by PIDs: $pids (set PORT_KILL=1 to auto-kill)" | tee -a "$ERROR_LOG"
+    exit 1
+  fi
+  echo "[certmon] port $port in use by PIDs: $pids — attempting to free" | tee -a "$ERROR_LOG"
+  for pid in $pids; do
+    if [[ -n "$pid" ]]; then
+      kill -TERM "$pid" 2>/dev/null || true
+    fi
+  done
+  for i in {1..20}; do
+    pids="$(pids_on_port "$port")"
+    [[ -z "$pids" ]] && break
+    sleep 0.2
+  end
+  pids="$(pids_on_port "$port")"
+  if [[ -n "$pids" ]]; then
+    echo "[certmon] force killing PIDs: $pids" | tee -a "$ERROR_LOG"
+    for pid in $pids; do
+      kill -KILL "$pid" 2>/dev/null || true
+    done
+    sleep 0.2
+  fi
 }
 
 is_running() {
@@ -41,6 +94,7 @@ start() {
   fi
   export PYTHONUNBUFFERED=1
   export PYTHONPATH="$APP_ROOT"
+  free_port_if_needed
   echo "[certmon] starting with $PYTHON (bind=$BIND, workers=$WORKERS)" | tee -a "$ERROR_LOG"
   "$PYTHON" -m gunicorn "$GUNICORN_APP" \
     -b "$BIND" \
