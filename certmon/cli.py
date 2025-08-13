@@ -21,9 +21,13 @@ def _parse_date(yyyy_mm_dd: str) -> date:
 
 
 def _resolve_db_path(config: Config | None) -> str:
-	if config is not None:
-		return config.app.database_path
-	return "data/certmon.db"
+    # 统一与 Web 一致：相对路径一律以项目根目录（包上级目录）为基准
+    raw_path = config.app.database_path if config is not None else "data/certmon.db"
+    p = Path(raw_path)
+    if p.is_absolute():
+        return p.as_posix()
+    base_dir = Path(__file__).resolve().parent.parent
+    return (base_dir / p).as_posix()
 
 
 def cmd_init_db(args: argparse.Namespace) -> int:
