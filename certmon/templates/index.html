@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>证书管理</title>
+	<style>
+		body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin: 24px; }
+		h1 { font-size: 20px; }
+		form { border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; max-width: 720px; }
+		label { display: block; margin: 8px 0 4px; font-weight: 600; }
+		input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+		button { margin-top: 12px; padding: 8px 14px; background: #2563eb; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+		button:hover { background: #1d4ed8; }
+		.table { border-collapse: collapse; width: 100%; margin-top: 24px; }
+		.table th, .table td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+		.flash { padding: 10px 12px; border-radius: 6px; margin: 8px 0; }
+		.flash.error { background: #fee2e2; color: #991b1b; }
+		.flash.success { background: #dcfce7; color: #166534; }
+		.helper { color: #6b7280; font-size: 12px; }
+	</style>
+</head>
+<body>
+	<h1>新增证书</h1>
+	{% with messages = get_flashed_messages(with_categories=true) %}
+		{% if messages %}
+			{% for category, message in messages %}
+				<div class="flash {{ category }}">{{ message }}</div>
+			{% endfor %}
+		{% endif %}
+	{% endwith %}
+
+	<form method="post" action="{{ url_for('add') }}">
+		<label for="name">名称/类目</label>
+		<input id="name" name="name" type="text" required>
+
+		<label for="email">接收提醒邮箱</label>
+		<input id="email" name="email" type="email" required>
+
+		<label for="acquired_on">获取日期</label>
+		<input id="acquired_on" name="acquired_on" type="date" required>
+
+		<label for="valid_months">有效月数</label>
+		<select id="valid_months" name="valid_months" required>
+			<option value="12">12 个月</option>
+			<option value="14">14 个月</option>
+			<option value="24">24 个月</option>
+			<option value="36">36 个月</option>
+			<option value="1">1 个月</option>
+			<option value="3">3 个月</option>
+			<option value="6">6 个月</option>
+		</select>
+		<div class="helper">将根据“获取日期 + 有效月数”自动计算到期日期</div>
+
+		<label for="notes">备注</label>
+		<textarea id="notes" name="notes" rows="2" placeholder="可选"></textarea>
+
+		<div class="helper">到期日期预览：<span id="expires_preview">-</span></div>
+		<button type="submit">保存</button>
+	</form>
+
+	<h1 style="margin-top:24px">证书列表</h1>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>名称</th>
+				<th>邮箱</th>
+				<th>获取日期</th>
+				<th>有效(月)</th>
+				<th>到期日期</th>
+				<th>上次提醒</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for r in records %}
+			<tr>
+				<td>{{ r.id }}</td>
+				<td>{{ r.name }}</td>
+				<td>{{ r.email }}</td>
+				<td>{{ r.acquired_on.strftime('%Y-%m-%d') }}</td>
+				<td>{{ r.valid_months }}</td>
+				<td>{{ r.expires_on.strftime('%Y-%m-%d') }}</td>
+				<td>{{ r.last_reminded_on.strftime('%Y-%m-%d') if r.last_reminded_on else '-' }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	<script>
+		function pad(n){ return n < 10 ? '0' + n : '' + n }
+		function addMonths(dateStr, months) {
+			if(!dateStr || !months) return null;
+			const parts = dateStr.split('-').map(Number);
+			if(parts.length !== 3) return null;
+			const y = parts[0], m = parts[1], d = parts[2];
+			const zeroBased = m - 1;
+			const total = zeroBased + months;
+			const ny = y + Math.floor(total / 12);
+			const nm = (total % 12 + 12) % 12; // 0-11
+			const lastDay = new Date(ny, nm + 1, 0).getDate();
+			const nd = Math.min(d, lastDay);
+			const ndt = new Date(ny, nm, nd);
+			return `${ndt.getFullYear()}-${pad(ndt.getMonth()+1)}-${pad(ndt.getDate())}`;
+		}
+		function updatePreview(){
+			const acq = document.getElementById('acquired_on').value;
+			const months = parseInt(document.getElementById('valid_months').value || '0', 10);
+			const out = addMonths(acq, months);
+			document.getElementById('expires_preview').textContent = out || '-';
+		}
+		document.getElementById('acquired_on').addEventListener('change', updatePreview);
+		document.getElementById('valid_months').addEventListener('change', updatePreview);
+		updatePreview();
+	</script>
+</body>
+</html>
+
+

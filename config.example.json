@@ -1,0 +1,15 @@
+{
+  "smtp": {
+    "host": "smtp.example.com",
+    "port": 587,
+    "username": "user@example.com",
+    "password": "REPLACE_WITH_REAL_PASSWORD",
+    "use_tls": true,
+    "from_email": "noreply@example.com"
+  },
+  "app": {
+    "database_path": "data/certmon.db",
+    "reminder_window_days": 7
+  }
+}
+
