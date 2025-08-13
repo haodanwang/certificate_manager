@@ -21,13 +21,13 @@ def _parse_date(yyyy_mm_dd: str) -> date:
 
 
 def _resolve_db_path(config: Config | None) -> str:
-    # 统一与 Web 一致：相对路径一律以项目根目录（包上级目录）为基准
-    raw_path = config.app.database_path if config is not None else "data/certmon.db"
-    p = Path(raw_path)
-    if p.is_absolute():
-        return p.as_posix()
-    base_dir = Path(__file__).resolve().parent.parent
-    return (base_dir / p).as_posix()
+	# 统一与 Web 一致：相对路径一律以项目根目录（包上级目录）为基准
+	raw_path = config.app.database_path if config is not None else "data/certmon.db"
+	p = Path(raw_path)
+	if p.is_absolute():
+		return p.as_posix()
+	base_dir = Path(__file__).resolve().parent.parent
+	return (base_dir / p).as_posix()
 
 
 def _resolve_config_path(config_path: str) -> str:
@@ -129,12 +129,12 @@ def build_parser() -> argparse.ArgumentParser:
 		help="在执行前切换至该目录",
 		default=None,
 	)
-    parser.add_argument(
-        "-c",
-        "--config",
-        help="配置文件路径 (默认: /etc/certmon/config.json)",
-        default="/etc/certmon/config.json",
-    )
+	parser.add_argument(
+		"-c",
+		"--config",
+		help="配置文件路径 (默认: /etc/certmon/config.json)",
+		default="/etc/certmon/config.json",
+	)
 	sp = parser.add_subparsers(dest="cmd", required=True)
 
 	sp_init = sp.add_parser("init-db", help="初始化数据库")
