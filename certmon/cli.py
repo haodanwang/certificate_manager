@@ -6,7 +6,7 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
-from .config import Config, load_config, try_load_config
+from .config import Config, SMTPConfig, load_config, try_load_config
 from .db import Database
 from .dateutil import add_months
 from .logic import send_due_reminders
@@ -106,11 +106,25 @@ def cmd_send_reminders(args: argparse.Namespace) -> int:
 
 def cmd_send_test(args: argparse.Namespace) -> int:
 	config = load_config(_resolve_config_path(args.config))
+	db = Database(_resolve_db_path(config))
 	to_email = args.to
 	subject = args.subject or "CertMon 测试邮件"
 	body = args.body or "这是一封来自 CertMon 的测试邮件。"
+	# 优先使用页面保存的 SMTP 设置
+	settings = db.get_smtp_settings()
+	if settings and settings.host and settings.port and settings.username and settings.password and settings.from_email is not None:
+		smtp_conf = SMTPConfig(
+			host=settings.host,
+			port=int(settings.port),
+			username=settings.username,
+			password=settings.password,
+			use_tls=bool(settings.use_tls) if settings.use_tls is not None else True,
+			from_email=(settings.from_email or settings.username),
+		)
+	else:
+		smtp_conf = config.smtp
 	try:
-		send_email(config.smtp, to_email, subject, body)
+		send_email(smtp_conf, to_email, subject, body)
 		print("测试邮件发送成功")
 		return 0
 	except Exception as e:
