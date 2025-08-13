@@ -14,6 +14,13 @@ from .db import Database
 def create_app(config_path: str = "config.json") -> Flask:
 	config = try_load_config(config_path)
 	db_path = (config.app.database_path if config else "data/certmon.db")
+	# 将相对路径解析为相对于项目根目录（包上级目录）的绝对路径
+	base_dir = Path(__file__).resolve().parent.parent
+	resolved = Path(db_path)
+	if not resolved.is_absolute():
+		resolved = base_dir / resolved
+	db_path = resolved.as_posix()
+
 	db = Database(db_path)
 	db.initialize_schema()
 

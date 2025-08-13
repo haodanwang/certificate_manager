@@ -67,6 +67,23 @@ class Database:
 
 	def add_certificate(self, name: str, email: str, acquired_on: date, valid_months: int, expires_on: date, notes: Optional[str]) -> int:
 		with self.connect() as conn:
+			# 确保表存在
+			conn.execute(
+				"""
+				CREATE TABLE IF NOT EXISTS certificates (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					name TEXT NOT NULL,
+					email TEXT NOT NULL,
+					acquired_on TEXT NOT NULL,
+					valid_months INTEGER NOT NULL,
+					expires_on TEXT NOT NULL,
+					notes TEXT,
+					last_reminded_on TEXT,
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL
+				);
+				"""
+			)
 			cursor = conn.execute(
 				"""
 				INSERT INTO certificates (name, email, acquired_on, valid_months, expires_on, notes, last_reminded_on, created_at, updated_at)
@@ -87,6 +104,23 @@ class Database:
 
 	def list_certificates(self) -> List[Certificate]:
 		with self.connect() as conn:
+			# 确保表存在
+			conn.execute(
+				"""
+				CREATE TABLE IF NOT EXISTS certificates (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					name TEXT NOT NULL,
+					email TEXT NOT NULL,
+					acquired_on TEXT NOT NULL,
+					valid_months INTEGER NOT NULL,
+					expires_on TEXT NOT NULL,
+					notes TEXT,
+					last_reminded_on TEXT,
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL
+				);
+				"""
+			)
 			rows = conn.execute(
 				"SELECT id, name, email, acquired_on, valid_months, expires_on, notes, last_reminded_on, created_at, updated_at FROM certificates ORDER BY date(expires_on) ASC, id ASC"
 			).fetchall()
@@ -114,11 +148,45 @@ class Database:
 
 	def remove_certificate(self, certificate_id: int) -> bool:
 		with self.connect() as conn:
+			# 确保表存在
+			conn.execute(
+				"""
+				CREATE TABLE IF NOT EXISTS certificates (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					name TEXT NOT NULL,
+					email TEXT NOT NULL,
+					acquired_on TEXT NOT NULL,
+					valid_months INTEGER NOT NULL,
+					expires_on TEXT NOT NULL,
+					notes TEXT,
+					last_reminded_on TEXT,
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL
+				);
+				"""
+			)
 			cursor = conn.execute("DELETE FROM certificates WHERE id = ?", (certificate_id,))
 			return cursor.rowcount > 0
 
 	def set_last_reminded_today(self, certificate_id: int, today: Optional[date] = None) -> None:
 		with self.connect() as conn:
+			# 确保表存在
+			conn.execute(
+				"""
+				CREATE TABLE IF NOT EXISTS certificates (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					name TEXT NOT NULL,
+					email TEXT NOT NULL,
+					acquired_on TEXT NOT NULL,
+					valid_months INTEGER NOT NULL,
+					expires_on TEXT NOT NULL,
+					notes TEXT,
+					last_reminded_on TEXT,
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL
+				);
+				"""
+			)
 			conn.execute(
 				"UPDATE certificates SET last_reminded_on = ?, updated_at = ? WHERE id = ?",
 				(self._today_string(today), self._now_string(), certificate_id),
@@ -127,6 +195,23 @@ class Database:
 	def query_due_for_reminders(self, today: date, reminder_window_days: int) -> List[Certificate]:
 		start = self._today_string(today)
 		with self.connect() as conn:
+			# 确保表存在
+			conn.execute(
+				"""
+				CREATE TABLE IF NOT EXISTS certificates (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					name TEXT NOT NULL,
+					email TEXT NOT NULL,
+					acquired_on TEXT NOT NULL,
+					valid_months INTEGER NOT NULL,
+					expires_on TEXT NOT NULL,
+					notes TEXT,
+					last_reminded_on TEXT,
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL
+				);
+				"""
+			)
 			rows = conn.execute(
 				"""
 				SELECT id, name, email, acquired_on, valid_months, expires_on, notes, last_reminded_on, created_at, updated_at
