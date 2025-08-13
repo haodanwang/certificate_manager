@@ -111,8 +111,11 @@ def create_app(config_path: str = "config.json") -> Flask:
 		except Exception:
 			flash("参数不合法", "error")
 			return redirect(url_for("settings_page"))
-		Database(db_path).upsert_smtp_settings(host, port_val, username, password, use_tls_val, from_email)
-		flash("SMTP 设置已保存", "success")
+		try:
+			Database(db_path).upsert_smtp_settings(host, port_val, username, password, use_tls_val, from_email)
+			flash("SMTP 设置已保存", "success")
+		except Exception as e:
+			flash(f"保存失败: {e}", "error")
 		return redirect(url_for("settings_page"))
 
 	@app.post("/delete/<int:cid>")

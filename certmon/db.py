@@ -292,19 +292,10 @@ class Database:
 		use_tls: Optional[bool],
 		from_email: Optional[str],
 	) -> None:
+		# 兼容老版本 SQLite（CentOS 7 可能为 3.7.x，不支持 UPSERT）
 		with self.connect() as conn:
-			conn.execute(
-				"""
-				INSERT INTO app_settings (id, host, port, username, password, use_tls, from_email)
-				VALUES (1, ?, ?, ?, ?, ?, ?)
-				ON CONFLICT(id) DO UPDATE SET
-					host = excluded.host,
-					port = excluded.port,
-					username = excluded.username,
-					password = excluded.password,
-					use_tls = excluded.use_tls,
-					from_email = excluded.from_email
-				""",
+			cursor = conn.execute(
+				"UPDATE app_settings SET host=?, port=?, username=?, password=?, use_tls=?, from_email=? WHERE id=1",
 				(
 					host,
 					(port if port is not None else None),
@@ -314,4 +305,16 @@ class Database:
 					from_email,
 				),
 			)
+			if cursor.rowcount == 0:
+				conn.execute(
+					"INSERT INTO app_settings (id, host, port, username, password, use_tls, from_email) VALUES (1, ?, ?, ?, ?, ?, ?)",
+					(
+						host,
+						(port if port is not None else None),
+						username,
+						password,
+						(1 if use_tls else 0) if use_tls is not None else None,
+						from_email,
+					),
+				)
 
