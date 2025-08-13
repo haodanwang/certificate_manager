@@ -8,7 +8,7 @@ set -euo pipefail
 APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 PYTHON="${PYTHON:-/usr/bin/python3}"
 GUNICORN_APP="${GUNICORN_APP:-certmon.web:create_app()}"
-BIND="${BIND:-0.0.0.0:8000}"
+BIND="${BIND:-127.0.0.1:8000}"
 WORKERS="${WORKERS:-2}"
 TIMEOUT="${TIMEOUT:-60}"
 PORT_KILL="${PORT_KILL:-1}"
