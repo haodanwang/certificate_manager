@@ -129,12 +129,12 @@ def build_parser() -> argparse.ArgumentParser:
 		help="在执行前切换至该目录",
 		default=None,
 	)
-	parser.add_argument(
-		"-c",
-		"--config",
-		help="配置文件路径 (默认: config.json)",
-		default="config.json",
-	)
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="配置文件路径 (默认: /etc/certmon/config.json)",
+        default="/etc/certmon/config.json",
+    )
 	sp = parser.add_subparsers(dest="cmd", required=True)
 
 	sp_init = sp.add_parser("init-db", help="初始化数据库")

@@ -11,7 +11,7 @@ from .dateutil import add_months
 from .db import Database
 
 
-def create_app(config_path: str = "config.json") -> Flask:
+def create_app(config_path: str = "/etc/certmon/config.json") -> Flask:
 	# 项目根目录（包上级目录）
 	base_dir = Path(__file__).resolve().parent.parent
 	# 配置文件路径：相对路径一律按项目根目录解析，避免不同工作目录导致读取不同配置
