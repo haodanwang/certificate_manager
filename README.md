@@ -8,8 +8,7 @@
 - 到期前 7 天内每日邮件提醒（通过 cron 定时执行）
 
 ### 运行环境
-- Python 3.11+
--需要在编译时候带OpenSSL编译
+- Python 3.8+
 - Linux 服务器（推荐使用 cron 定时任务）
  - 可选 Web 管理界面（Flask）
 
@@ -86,6 +85,25 @@ crontab -e
 - 可使用 `-C` 指定项目目录（否则默认当前工作目录）。
 - 日志输出到 `/var/log/certmon.log`。
 
+### 启停脚本（可选，不使用 systemd 时）
+在项目根目录下提供 `scripts/certmon.sh`，支持后台运行 Gunicorn：
+```bash
+chmod +x scripts/certmon.sh
+
+# 启动（后台）
+./scripts/certmon.sh start
+
+# 查看状态 / 平滑重载 / 重启 / 停止
+./scripts/certmon.sh status
+./scripts/certmon.sh reload
+./scripts/certmon.sh restart
+./scripts/certmon.sh stop
+
+# 查看实时日志
+./scripts/certmon.sh tail
+```
+可通过环境变量覆盖：`PYTHON`、`BIND`、`WORKERS`、`TIMEOUT`、`GUNICORN_APP`。
+
 ### 命令说明
 - 初始化数据库：
 ```bash
@@ -106,6 +124,9 @@ python3 -m certmon.cli add --name "名称/类目" --email someone@example.com --
 python3 -m certmon.cli list
 ```
 
+- 删除证书（按 id）：
+```bash
+python3 -m certmon.cli remove --id 1
 ```
 
 - 发送提醒：
