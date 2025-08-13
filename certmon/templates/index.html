@@ -6,48 +6,51 @@
 	<title>证书管理</title>
 	<style>
 		:root{
-			--bg:#0b1020;
-			--card:#111827;
-			--muted:#94a3b8;
-			--border:#243041;
-			--primary:#3b82f6;
-			--primary-600:#2563eb;
-			--danger:#ef4444;
-			--danger-600:#dc2626;
-			--success:#16a34a;
+			--bg-start:#f8fafc; /* slate-50 */
+			--bg-end:#eef2ff;   /* indigo-50 */
+			--card:#ffffff;
+			--text:#0f172a;    /* slate-900 */
+			--muted:#64748b;   /* slate-500 */
+			--border:#e5e7eb;  /* gray-200 */
+			--primary:#6366f1; /* indigo-500 */
+			--primary-600:#4f46e5; /* indigo-600 */
+			--danger:#ef4444;  /* red-500 */
+			--danger-600:#dc2626; /* red-600 */
+			--success:#16a34a; /* green-600 */
 		}
 		*{box-sizing:border-box}
-		body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin:0; background:linear-gradient(180deg,#0b1020,#0b1328); color:#e5e7eb}
-		.header{background:#0f172a; border-bottom:1px solid #0b223c; position:sticky; top:0; z-index:10}
+		body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin:0; background:linear-gradient(180deg,var(--bg-start),var(--bg-end)); color:var(--text)}
+		.header{background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10}
 		.header-inner{max-width:1120px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:12px}
-		.brand{font-weight:700; letter-spacing:.2px}
+		.brand{font-weight:700; letter-spacing:.2px; color:var(--text)}
 		.container{max-width:1120px; margin:0 auto; padding:24px 20px}
-		.card{background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+		.card{background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(2,8,20,.06)}
 		.card-body{padding:18px}
-		.section-title{font-size:18px; margin:0 0 12px}
-		label{display:block; margin:6px 0 6px; font-weight:600; color:#cbd5e1}
-		input,select,textarea{width:100%; background:#0b1220; color:#e5e7eb; padding:10px 12px; border:1px solid var(--border); border-radius:10px; outline:none; transition:border-color .2s, box-shadow .2s}
-		input:focus,select:focus,textarea:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+		.section-title{font-size:18px; margin:0 0 12px; color:var(--text)}
+		label{display:block; margin:6px 0 6px; font-weight:600; color:#334155}
+		input,select,textarea{width:100%; background:#ffffff; color:var(--text); padding:10px 12px; border:1px solid var(--border); border-radius:10px; outline:none; transition:border-color .2s, box-shadow .2s}
+		input:focus,select:focus,textarea:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.20)}
 		.helper{color:var(--muted); font-size:12px; margin-top:6px}
-		.actions{margin-top:12px; display:flex; gap:10px}
-		.btn{display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:10px; border:1px solid transparent; cursor:pointer; font-weight:600}
-		.btn-primary{background:linear-gradient(180deg,var(--primary),var(--primary-600)); color:#fff}
+		.actions{margin-top:12px; display:flex; gap:10px; align-items:center}
+		.btn{display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; border:1px solid transparent; cursor:pointer; font-weight:700}
+		.btn-primary{background:linear-gradient(180deg,var(--primary),var(--primary-600)); color:#fff; box-shadow:0 6px 16px rgba(79,70,229,.25)}
 		.btn-primary:hover{filter:brightness(1.05)}
-		.btn-danger{background:linear-gradient(180deg,var(--danger),var(--danger-600)); color:#fff}
+		.btn-danger{background:linear-gradient(180deg,var(--danger),var(--danger-600)); color:#fff; box-shadow:0 6px 16px rgba(220,38,38,.20)}
 		.btn-danger:hover{filter:brightness(1.05)}
 		.flash{padding:10px 12px; border-radius:10px; margin:10px 0; border:1px solid var(--border)}
-		.flash.error{background:rgba(239,68,68,.1); color:#fecaca}
-		.flash.success{background:rgba(22,163,74,.1); color:#bbf7d0}
+		.flash.error{background:#fee2e2; color:#7f1d1d}
+		.flash.success{background:#dcfce7; color:#166534}
 		.form-grid{display:grid; grid-template-columns:1fr; gap:14px}
 		@media(min-width:860px){.form-grid{grid-template-columns:repeat(2,1fr)}}
 		.form-span-2{grid-column:1}
 		@media(min-width:860px){.form-span-2{grid-column:span 2}}
 		.table-wrap{margin-top:20px}
-		.table{border-collapse:separate; border-spacing:0; width:100%; overflow:hidden; border:1px solid var(--border); border-radius:12px}
-		.table thead th{background:#0e1726; color:#cbd5e1; font-weight:700; text-align:left; padding:12px; border-bottom:1px solid var(--border)}
-		.table tbody td{padding:12px; border-bottom:1px solid var(--border)}
-		.table tbody tr:hover{background:#0b1628}
-		.badge{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); color:#cbd5e1; font-size:12px}
+		.table{border-collapse:separate; border-spacing:0; width:100%; overflow:hidden; border:1px solid var(--border); border-radius:12px; background:#fff}
+		.table thead th{background:#f1f5f9; color:#334155; font-weight:700; text-align:left; padding:12px; border-bottom:1px solid var(--border)}
+		.table tbody td{padding:12px; border-bottom:1px solid var(--border); color:#0f172a}
+		.table tbody tr:nth-child(odd){background:#fafafa}
+		.table tbody tr:hover{background:#f8fafc}
+		.badge{display:inline-block; padding:2px 10px; border-radius:999px; border:1px solid #c7d2fe; background:#eef2ff; color:#3730a3; font-size:12px}
 	</style>
 </head>
 <body>
