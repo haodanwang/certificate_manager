@@ -30,8 +30,17 @@ def _resolve_db_path(config: Config | None) -> str:
     return (base_dir / p).as_posix()
 
 
+def _resolve_config_path(config_path: str) -> str:
+	# 将相对配置路径按项目根目录解析，避免不同工作目录造成读取不同文件
+	p = Path(config_path)
+	if p.is_absolute():
+		return p.as_posix()
+	base_dir = Path(__file__).resolve().parent.parent
+	return (base_dir / p).as_posix()
+
+
 def cmd_init_db(args: argparse.Namespace) -> int:
-	config = try_load_config(args.config)
+	config = try_load_config(_resolve_config_path(args.config))
 	db = Database(_resolve_db_path(config))
 	db.initialize_schema()
 	print(f"数据库已初始化: {Path(_resolve_db_path(config)).as_posix()}")
@@ -39,7 +48,7 @@ def cmd_init_db(args: argparse.Namespace) -> int:
 
 
 def cmd_add(args: argparse.Namespace) -> int:
-	config = try_load_config(args.config)
+	config = try_load_config(_resolve_config_path(args.config))
 	db = Database(_resolve_db_path(config))
 	if args.expires is not None:
 		expires_on = _parse_date(args.expires)
@@ -62,7 +71,7 @@ def cmd_add(args: argparse.Namespace) -> int:
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-	config = try_load_config(args.config)
+	config = try_load_config(_resolve_config_path(args.config))
 	db = Database(_resolve_db_path(config))
 	records = db.list_certificates()
 	if not records:
@@ -76,7 +85,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_remove(args: argparse.Namespace) -> int:
-	config = try_load_config(args.config)
+	config = try_load_config(_resolve_config_path(args.config))
 	db = Database(_resolve_db_path(config))
 	success = db.remove_certificate(int(args.id))
 	if success:
@@ -87,7 +96,7 @@ def cmd_remove(args: argparse.Namespace) -> int:
 
 
 def cmd_send_reminders(args: argparse.Namespace) -> int:
-	config = load_config(args.config)
+	config = load_config(_resolve_config_path(args.config))
 	db = Database(_resolve_db_path(config))
 	now = date.today()
 	count = send_due_reminders(config, db, now)
@@ -96,7 +105,7 @@ def cmd_send_reminders(args: argparse.Namespace) -> int:
 
 
 def cmd_send_test(args: argparse.Namespace) -> int:
-	config = load_config(args.config)
+	config = load_config(_resolve_config_path(args.config))
 	to_email = args.to
 	subject = args.subject or "CertMon 测试邮件"
 	body = args.body or "这是一封来自 CertMon 的测试邮件。"
