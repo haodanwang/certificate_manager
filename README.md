@@ -106,9 +106,6 @@ python3 -m certmon.cli add --name "名称/类目" --email someone@example.com --
 python3 -m certmon.cli list
 ```
 
-- 删除证书（按 id）：
-```bash
-python3 -m certmon.cli remove --id 1
 ```
 
 - 发送提醒：
