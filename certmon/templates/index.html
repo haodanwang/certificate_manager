@@ -177,6 +177,26 @@
 			const out = isPermanent ? '永不过期' : addMonths(acq, months);
 			document.getElementById('expires_preview').textContent = out || '-';
 		}
+		// 让点击日期输入框任意位置即可弹出原生日期选择器（支持 showPicker 的浏览器）
+		document.addEventListener('DOMContentLoaded', function(){
+			var dateInput = document.getElementById('acquired_on');
+			if(!dateInput) return;
+			function openPicker(){
+				if (typeof dateInput.showPicker === 'function') {
+					try { dateInput.showPicker(); } catch(e) {}
+				}
+			}
+			dateInput.addEventListener('focus', function(){
+				// 聚焦时尝试自动打开，避免还需点图标
+				openPicker();
+			});
+			dateInput.addEventListener('mousedown', function(e){
+				// 阻止默认以确保我们可以在点击任意处时打开选择器
+				e.preventDefault();
+				dateInput.focus();
+				openPicker();
+			});
+		});
 		document.getElementById('acquired_on').addEventListener('change', updatePreview);
 		document.getElementById('valid_months').addEventListener('change', updatePreview);
 		updatePreview();
