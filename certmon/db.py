@@ -31,6 +31,17 @@ class SMTPSettings:
 	from_email: Optional[str]
 
 
+@dataclass
+class User:
+	id: int
+	username: str
+	password_hex: str
+	salt_hex: str
+	is_admin: bool
+	created_at: datetime
+	updated_at: datetime
+
+
 class Database:
 	def __init__(self, database_path: str) -> None:
 		self._path = Path(database_path)
@@ -76,6 +87,20 @@ class Database:
 					password TEXT,
 					use_tls INTEGER,
 					from_email TEXT
+				);
+				"""
+			)
+			# 用户表
+			conn.execute(
+				"""
+				CREATE TABLE IF NOT EXISTS users (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					username TEXT UNIQUE NOT NULL,
+					password_hex TEXT NOT NULL,
+					salt_hex TEXT NOT NULL,
+					is_admin INTEGER NOT NULL DEFAULT 0,
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL
 				);
 				"""
 			)
@@ -169,6 +194,42 @@ class Database:
 					)
 				)
 			return result
+
+	def get_user_by_username(self, username: str) -> Optional[User]:
+		with self.connect() as conn:
+			row = conn.execute(
+				"SELECT id, username, password_hex, salt_hex, is_admin, created_at, updated_at FROM users WHERE username = ?",
+				(username,),
+			).fetchone()
+			if not row:
+				return None
+			return User(
+				id=int(row["id"]),
+				username=str(row["username"]),
+				password_hex=str(row["password_hex"]),
+				salt_hex=str(row["salt_hex"]),
+				is_admin=bool(int(row["is_admin"])),
+				created_at=datetime.strptime(str(row["created_at"]), "%Y-%m-%dT%H:%M:%SZ"),
+				updated_at=datetime.strptime(str(row["updated_at"]), "%Y-%m-%dT%H:%M:%SZ"),
+			)
+
+	def create_user(self, username: str, password_hex: str, salt_hex: str, is_admin: bool) -> int:
+		with self.connect() as conn:
+			cursor = conn.execute(
+				"""
+				INSERT INTO users (username, password_hex, salt_hex, is_admin, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?)
+				""",
+				(
+					username,
+					password_hex,
+					salt_hex,
+					1 if is_admin else 0,
+					self._now_string(),
+					self._now_string(),
+				),
+			)
+			return int(cursor.lastrowid)
 
 	def remove_certificate(self, certificate_id: int) -> bool:
 		with self.connect() as conn:

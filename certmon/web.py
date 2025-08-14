@@ -4,11 +4,12 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Tuple
 
-from flask import Flask, redirect, render_template, request, url_for, flash
+from flask import Flask, redirect, render_template, request, url_for, flash, session, jsonify
 
 from .config import load_config, try_load_config
 from .dateutil import add_months
 from .db import Database
+from .auth import hash_password, verify_password
 
 
 def create_app(config_path: str = "/etc/certmon/config.json") -> Flask:
@@ -29,12 +30,21 @@ def create_app(config_path: str = "/etc/certmon/config.json") -> Flask:
 
 	db = Database(db_path)
 	db.initialize_schema()
+	# 默认管理员：shanks / Huawei12#$ （仅在用户不存在时创建）
+	try:
+		if not Database(db_path).get_user_by_username("shanks"):
+			pwd_hex, salt_hex = hash_password("Huawei12#$")
+			Database(db_path).create_user("shanks", pwd_hex, salt_hex, True)
+	except Exception:
+		pass
 
 	app = Flask(__name__)
 	app.secret_key = "change-this-secret-key"
 
 	@app.get("/")
 	def index():
+		if not session.get("uid"):
+			return redirect(url_for("login"))
 		records = Database(db_path).list_certificates()
 		today = date.today()
 		vm = []
@@ -61,6 +71,8 @@ def create_app(config_path: str = "/etc/certmon/config.json") -> Flask:
 
 	@app.post("/add")
 	def add():
+		if not session.get("uid"):
+			return redirect(url_for("login"))
 		name = request.form.get("name", "").strip()
 		email = request.form.get("email", "").strip()
 		acquired_on_str = request.form.get("acquired_on", "").strip()
@@ -94,11 +106,15 @@ def create_app(config_path: str = "/etc/certmon/config.json") -> Flask:
 
 	@app.get("/settings")
 	def settings_page():
+		if not session.get("uid"):
+			return redirect(url_for("login"))
 		settings = Database(db_path).get_smtp_settings()
 		return render_template("settings.html", settings=settings)
 
 	@app.post("/settings")
 	def save_settings():
+		if not session.get("uid"):
+			return redirect(url_for("login"))
 		host = request.form.get("host") or None
 		port = request.form.get("port")
 		username = request.form.get("username") or None
@@ -120,11 +136,52 @@ def create_app(config_path: str = "/etc/certmon/config.json") -> Flask:
 
 	@app.post("/delete/<int:cid>")
 	def delete(cert_id: int = None, cid: int = None):
+		if not session.get("uid"):
+			return redirect(url_for("login"))
 		# Flask 2.x 传参兼容处理
 		target_id = cid if cid is not None else cert_id
 		ok = Database(db_path).remove_certificate(int(target_id))
 		flash("已删除" if ok else "未找到该记录", "success" if ok else "error")
 		return redirect(url_for("index"))
+
+	@app.get("/login")
+	def login():
+		return render_template("login.html")
+
+	@app.post("/login")
+	def do_login():
+		username = (request.form.get("username") or "").strip()
+		password = (request.form.get("password") or "")
+		db_obj = Database(db_path)
+		user = db_obj.get_user_by_username(username)
+		if user and verify_password(password, user.password_hex, user.salt_hex):
+			session["uid"] = user.id
+			session["is_admin"] = bool(user.is_admin)
+			return redirect(url_for("index"))
+		flash("用户名或密码错误", "error")
+		return redirect(url_for("login"))
+
+	@app.post("/logout")
+	def logout():
+		session.clear()
+		return redirect(url_for("login"))
+
+	# 仅管理员可调用：新增用户接口
+	@app.post("/api/admin/users")
+	def api_admin_create_user():
+		if not session.get("uid") or not session.get("is_admin"):
+			return jsonify({"error": "forbidden"}), 403
+		data = request.get_json(silent=True) or {}
+		username = (data.get("username") or "").strip()
+		password = (data.get("password") or "")
+		is_admin = bool(data.get("is_admin", False))
+		if not username or not password:
+			return jsonify({"error": "username and password required"}), 400
+		if Database(db_path).get_user_by_username(username):
+			return jsonify({"error": "user exists"}), 409
+		pwd_hex, salt_hex = hash_password(password)
+		uid = Database(db_path).create_user(username, pwd_hex, salt_hex, is_admin)
+		return jsonify({"id": uid, "username": username, "is_admin": is_admin}), 201
 
 	return app
 
