@@ -41,10 +41,19 @@ def create_app(config_path: str = "/etc/certmon/config.json") -> Flask:
 	app = Flask(__name__)
 	app.secret_key = "change-this-secret-key"
 
-	@app.get("/")
-	def index():
+	# 全局登录校验：未登录则重定向到 /login（放行登录与静态资源）
+	@app.before_request
+	def _require_login():
+		from flask import request
+		allow_endpoints = {"login", "do_login", "static"}
+		if request.endpoint in allow_endpoints:
+			return None
 		if not session.get("uid"):
 			return redirect(url_for("login"))
+
+	@app.get("/")
+	def index():
+		# 受全局 before_request 保护
 		records = Database(db_path).list_certificates()
 		today = date.today()
 		vm = []
